@@ -244,7 +244,7 @@ See "[Set and View Configuration Settings](https://docs.aws.amazon.com/cli/lates
 
 ## References
 
-* [Automox API](hhttps://developer.automox.com/)
+* [Automox API](https://developer.automox.com/)
 * [Terraform Landing Zone with an Account Vending Machine](https://www.hashicorp.com/resources/aws-terraform-landing-zone-tlz-accelerator)
 * [AWS Control Tower with Account Factory for Terraform](https://docs.aws.amazon.com/controltower/latest/userguide/taf-account-provisioning.html)
 * [Manage AWS Accounts Using Control Tower Account Factory for Terraform](https://learn.hashicorp.com/tutorials/terraform/aws-control-tower-aft?in=terraform/aws)
