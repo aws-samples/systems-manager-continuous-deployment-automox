@@ -36,8 +36,8 @@ See "Prerequisites" for requirements to leverage this pattern.
 ## Product versions
 
 Supported Operating Systems:
-* Windows Operating Systems with SSM Agent Installed and [PowerShell](https://learn.microsoft.com/en-us/powershell/scripting/overview?view=powershell-7.3) enabled
-* Linux Operating Systems with SSM Agent Installed and [Bash](https://www.gnu.org/software/bash/manual/html_node/index.html) enabled
+- Windows Operating Systems with SSM Agent Installed and [PowerShell](https://learn.microsoft.com/en-us/powershell/scripting/overview?view=powershell-7.3) enabled
+- Linux Operating Systems with SSM Agent Installed and [Bash](https://www.gnu.org/software/bash/manual/html_node/index.html) enabled
 
 Terraform Structure
 ```
@@ -59,12 +59,12 @@ Terraform Structure
 
 ## Target technology stack  
 
-* Amazon EC2 Instances
-* AWS Systems Manager Inventory
-* AWS Systems Manager Compliance Check
-* AWS Systems Manager SSM Documents
-* Secrets Manager
-* Automox
+- Amazon EC2 Instances
+- AWS Systems Manager Inventory
+- AWS Systems Manager Compliance Check
+- AWS Systems Manager SSM Documents
+- Secrets Manager
+- Automox
 
 ## Target architecture 
 
@@ -72,9 +72,9 @@ Terraform Structure
 
 ## Automation and scale
 
-* This pattern is intended to be used at scale, for the Terraform modules, instead of deploying it locally, the Terraform modules can be used in a multi-account strategy environment, such as in an AWS Control Tower with Account Factory for Terraform environment. In that case, a backend state S3 bucket should be used for managing Terraform state files, instead of managing the configuration state locally. For the CloudFormation template, it can be deployed as a StackSet.
+- This pattern is intended to be used at scale, for the Terraform modules, instead of deploying it locally, the Terraform modules can be used in a multi-account strategy environment, such as in an AWS Control Tower with Account Factory for Terraform environment. In that case, a backend state S3 bucket should be used for managing Terraform state files, instead of managing the configuration state locally. For the CloudFormation template, it can be deployed as a StackSet.
 
-* To deploy for scaled use, deploy the solution to one central account, such as “Shared Services/Common Services” from a Control Tower or Landing Zone account model. For most efficient usage of resources, assuming there is only one Automox account for the environment, the Automox Secret should be centralized in a single account, and shared cross account, reducing Secrets Manager cost. Grant consumer accounts permission to access to the Secrets Manager Automox Secret, such as with Attribute Based Access Control (ABAC). For example, in an Account Vending Machine or Account Factory for Terraform, add permissions to each account baseline or account customization baseline to have access to the Automox Secret in the Shared Services/Common Services account. 
+- To deploy for scaled use, deploy the solution to one central account, such as “Shared Services/Common Services” from a Control Tower or Landing Zone account model. For most efficient usage of resources, assuming there is only one Automox account for the environment, the Automox Secret should be centralized in a single account, and shared cross account, reducing Secrets Manager cost. Grant consumer accounts permission to access to the Secrets Manager Automox Secret, such as with Attribute Based Access Control (ABAC). For example, in an Account Vending Machine or Account Factory for Terraform, add permissions to each account baseline or account customization baseline to have access to the Automox Secret in the Shared Services/Common Services account. 
 
 ## FAQ
 
@@ -244,11 +244,11 @@ See "[Set and View Configuration Settings](https://docs.aws.amazon.com/cli/lates
 
 ## References
 
-* [Automox API](https://developer.automox.com/)
-* [Terraform Landing Zone with an Account Vending Machine](https://www.hashicorp.com/resources/aws-terraform-landing-zone-tlz-accelerator)
-* [AWS Control Tower with Account Factory for Terraform](https://docs.aws.amazon.com/controltower/latest/userguide/taf-account-provisioning.html)
-* [Manage AWS Accounts Using Control Tower Account Factory for Terraform](https://learn.hashicorp.com/tutorials/terraform/aws-control-tower-aft?in=terraform/aws)
+- [Automox API](https://developer.automox.com/)
+- [Terraform Landing Zone with an Account Vending Machine](https://www.hashicorp.com/resources/aws-terraform-landing-zone-tlz-accelerator)
+- [AWS Control Tower with Account Factory for Terraform](https://docs.aws.amazon.com/controltower/latest/userguide/taf-account-provisioning.html)
+- [Manage AWS Accounts Using Control Tower Account Factory for Terraform](https://learn.hashicorp.com/tutorials/terraform/aws-control-tower-aft?in=terraform/aws)
 
 ## Author
 
-* Mike Saintcross [msaintcr@amazon.com](https://github.com/msntx)
+- Mike Saintcross [msaintcr@amazon.com](https://github.com/msntx)
