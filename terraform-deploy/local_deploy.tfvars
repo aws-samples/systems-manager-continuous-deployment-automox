@@ -1,0 +1,7 @@
+account_id                    = "<DEPLOYMENT-ACCOUNT-ID>"
+aws_region                    = "us-east-1"
+aws_s3_automox_log_bucket     = "example-automox-logging-bucket-0123"
+aws_ec2_instance_profile      = "example-ec2-instance-profile-role"
+ssm_association_name          = "EndpointToolingCompliance"
+compliance_severity           = "HIGH"
+cron_expression               = "cron(0 23 23 ? * * *)"

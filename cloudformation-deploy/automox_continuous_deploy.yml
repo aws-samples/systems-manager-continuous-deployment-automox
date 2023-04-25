@@ -1,0 +1,140 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Schedule Automatic Running of Automox Compliance - per region"
+Parameters:
+  AutomoxAPIKey:
+    Type: String
+    NoEcho: true
+    Description: "Automox API key."
+    Default: "Automox API Key"
+  AutomoxLogBucket:
+    Type: String
+    Description: "Automox Installation logging bucket."
+    Default: "example-automox-logging-bucket-0123"
+    AllowedPattern: '(?!(^xn--|.+-s3alias$))^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$'
+    ConstraintDescription: "Must specificy a valid S3 bucket name."
+  SSMAssociationName:
+    Type: String
+    Description: "Name for Systems Manager continuous check."
+    Default: "EndpointToolingCompliance"
+  ComplianceSeverity:
+    Type: String
+    Description: 'The severity level for when Automox is not installed. Valid values are "CRITICAL", "HIGH", "MEDIUM", "LOW", and "UNSPECIFIED"'
+    Default: "HIGH"
+    AllowedValues: ["CRITICAL","HIGH","MEDIUM","LOW","UNSPECIFIED"]
+    ConstraintDescription: "Must specificy a valid compliance severity."
+  CRONExpression:
+    Type: String
+    Description: "The CRON expression to schedule the association check."
+    Default: "cron(0 23 23 ? * * *)"
+Resources:
+  # Create Automox installation Logging bucket.
+  # This bucket is not needed if using in a best practice multi-account strategy environment. 
+  # In a Landing Zone or Control Tower environment, point the SSM Association to output to your Log Archive account bucket. 
+  # This S3 bucket does not have access logging enabled to avoid recursive logging
+  AutomoxLogsBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: !Ref AutomoxLogBucket
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+# Create Secrets Manager values for storing Automox API Keys
+# Secrets Manager defaults to using the AWS account's default KMS key
+# Modify each secret resources to use your KMS ID if you would like to encrypt with your own CMK
+  AutomoxAPIKeySec:
+    Type: 'AWS::SecretsManager::Secret'
+    Properties:
+      Name: "automox/apiKey"
+      Description: The API Key for Automox
+      SecretString: !Ref AutomoxAPIKey
+  AutomoxInstallationDocument: 
+      Type: "AWS::SSM::Document"
+      Properties: 
+        DocumentType: "Command"
+        Name: "AutomoxWinLinuxInstall"
+        Content:
+          description: "Installs Automox on Windows and Linux"
+          schemaVersion: "2.2"
+          parameters:
+            InstallAutomox:
+              type: "String"
+              description: "Automox"
+              default: "######## Install Automox Agent ########"
+            AutomoxURL:
+              type: "String"
+              description: "Automox URL"
+              default: "https://console.automox.com/Automox_Installer-latest.msi"
+            AutomoxKey:
+              type: "String"
+              description: "Automox Key"
+              default: !Ref AutomoxAPIKey
+            AMPath:
+              type: "String"
+              description: "AM Path"
+              default: "C:\\Temp"
+            AMOutFile:
+              type: "String"
+              description: "AM Outfile"
+              default: "C:\\Temp\\Automox_Installer-latest.msi"
+          mainSteps:
+          - action: "aws:runShellScript"
+            name: "InstallAutomoxLinux"
+            precondition:
+              StringEquals:
+                - platformType
+                - Linux
+            inputs:
+              runCommand:
+                - "if [[ $(ps aux | grep amagent | grep -vc grep)  > 0 ]] ; then echo 'Automox Agent already installed. Exiting.' && exit 1; fi"
+                - "echo 'Installing Automox'"
+                - "curl -sS https://console.automox.com/downloadInstaller?accesskey={{AutomoxKey}} | sudo bash"
+                - "if [[ $(ps aux | grep amagent | grep -vc grep)  > 0 ]] ; then echo 'Automox Agent successfully installed.'; fi"
+                - "aws ec2 create-tags --resources `cat /var/lib/cloud/data/instance-id` --tags Key=Automox,Value=True"
+          - action: "aws:runPowerShellScript"
+            name: "InstallAutomoxWindows"
+            precondition:
+              StringEquals:
+                - platformType
+                - Windows
+            inputs:
+              runCommand:
+              - "if (Get-Service -Name 'amagent' -ErrorAction SilentlyContinue) { Write-Host 'Automox already installed. Exiting.'; exit 2 } "
+              - "Write-Host {{InstallAutomox}}"
+              - "if (!(Test-Path -Path {{AMPath}} -ErrorAction SilentlyContinue)) { New-Item -ItemType Directory -Path {{AMPath}} -Force }"
+              - "Invoke-WebRequest -Uri {{AutomoxURL}} -OutFile {{AMOutFile}}" 
+              - "Start-Process 'msiexec.exe' -ArgumentList '/i {{AMOutFile}} /qn /norestart ACCESSKEY={{AutomoxKey}}'"
+              - "if (Get-Service -Name 'amagent' -ErrorAction SilentlyContinue) { Write-Host 'Automox Agent successfully installed.'}"
+              - "$instanceId = Get-EC2InstanceMetadata -Path '/instance-id'"
+              - "$tag = New-Object Amazon.EC2.Model.Tag"
+              - "$tag.Key = 'Automox'"
+              - "$tag.Value = 'True'"
+              - "New-EC2Tag -Resource $instanceId -Tag $tag"
+      DependsOn:
+      - AutomoxAPIKeySec
+  SSMAssociation:
+    Type: "AWS::SSM::Association"
+    Properties:
+      AssociationName: !Ref SSMAssociationName
+      Name: "AutomoxWinLinuxInstall"
+      ScheduleExpression: !Ref CRONExpression
+      Targets:
+        - Key: "InstanceIds"
+          Values:
+            - "*"
+      ComplianceSeverity: !Ref ComplianceSeverity
+      OutputLocation:
+        S3Location:
+          OutputS3BucketName: !Ref AutomoxLogBucket
+          OutputS3KeyPrefix: !Sub "SSMInstallLogs/${AWS::AccountId}/"
+    DependsOn: 
+    - AutomoxInstallationDocument
+    - AutomoxLogsBucket
