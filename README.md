@@ -17,6 +17,8 @@ See "Prerequisites" for requirements to leverage this pattern.
 - [EC2](https://aws.amazon.com/ec2/) Instances with the [SSM Agent](https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-agent.html) installed.
 - EC2 Instances with internet connectivity, in order to validate with the Automox API and download and install the Automox Agent.
 - EC2 Instances with an [EC2 IAM instance profile](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2_instance-profiles.html) allowing SSM functionality.
+- For the Terraform deployment, the SSM document resolves the API key from Secrets Manager at command-execution time (`{{resolve:secretsmanager:automox/apiKey}}`), so the EC2 instance profile needs `secretsmanager:GetSecretValue` on the `automox/apiKey` secret. The Terraform module grants this automatically by attaching a scoped inline policy to the instance profile named in `aws_ec2_instance_profile`, so no manual IAM change is required. The CloudFormation path passes the key into the document directly and does not need this permission.
+- EC2 Instances configured to allow retrieval of instance metadata. New EC2 launches increasingly default to [IMDSv2](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-service.html) being required. This solution's tagging steps use the SSM Agent and AWS Tools for PowerShell, which support IMDSv2, but ensure the instance metadata service is not disabled.
 - Ensure the [.tfvars](https://developer.hashicorp.com/terraform/tutorials/configuration-language/variables) file has all variables defined or define all variables at “Terraform Apply” time.
 
 ### If deploying with CloudFormation
@@ -27,6 +29,7 @@ See "Prerequisites" for requirements to leverage this pattern.
 - EC2 Instances with the SSM Agent installed.
 - EC2 Instances with internet connectivity, in order to validate with the Automox API and download and install the Automox Agent.
 - EC2 Instances with an instance profile allowing SSM functionality.
+- EC2 Instances configured to allow retrieval of instance metadata. New EC2 launches increasingly default to [IMDSv2](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-service.html) being required. This solution's tagging steps use the SSM Agent and AWS Tools for PowerShell, which support IMDSv2, but ensure the instance metadata service is not disabled.
 
 ## Limitations 
 
@@ -36,7 +39,7 @@ See "Prerequisites" for requirements to leverage this pattern.
 ## Product versions
 
 Supported Operating Systems:
-- Windows Operating Systems with SSM Agent Installed and [PowerShell](https://learn.microsoft.com/en-us/powershell/scripting/overview?view=powershell-7.3) enabled
+- Windows Operating Systems with SSM Agent Installed and [PowerShell](https://learn.microsoft.com/en-us/powershell/scripting/overview) enabled
 - Linux Operating Systems with SSM Agent Installed and [Bash](https://www.gnu.org/software/bash/manual/html_node/index.html) enabled
 
 Terraform Structure
@@ -53,9 +56,9 @@ Terraform Structure
 1. `local_deploy.tfvars` defines the Terraform variables to be used at apply time.
 2. `variables.tf` defines the required variables to deploy the solution.
 3. `infrastructure.tf` creates the resources necessary to set up systems manager fo continuous deployment and endpoint compliance.
-4. `sm_sec.tf` creates the secrets in Secrets Manager for storing API keys.
-4. `automox_install_multi_os.tf` creates the SSM Document which contains shellcode for Automox installation both Windows and Linux operating systems.
-5. `outputs.tf` defines the outputs as a result of the resources created.
+4. `sm_sec.tf` creates the secret in Secrets Manager for storing the API key, and grants the EC2 instance profile `secretsmanager:GetSecretValue` on that secret (scoped to its ARN) since the SSM document resolves the key at command-execution time.
+5. `automox_install_multi_os.tf` creates the SSM Document which contains shellcode for Automox installation both Windows and Linux operating systems.
+6. `outputs.tf` defines the outputs as a result of the resources created.
 
 ## Target technology stack  
 
@@ -99,10 +102,10 @@ This solution is intended for less governed environments, where resources may be
 
 ``` bash
    $ aws --version
-   aws-cli/1.16.249 Python/3.6.8...
+   aws-cli/2.15.0 Python/3.11.6...
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;AWS CLI version 1.1 or higher is fine.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;AWS CLI version 2 is recommended (version 1 is fine but has reached end of support for older Python runtimes).
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If you instead received `command not found` then install the AWS CLI.
 
@@ -174,10 +177,10 @@ aws secretsmanager delete-secret --secret-id automox/apiKey --force-delete-witho
 
 ``` bash
    $ aws --version
-   aws-cli/1.16.249 Python/3.6.8...
+   aws-cli/2.15.0 Python/3.11.6...
 ```
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;AWS CLI version 1.1 or higher is fine.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;AWS CLI version 2 is recommended (version 1 is fine but has reached end of support for older Python runtimes).
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If you instead received `command not found` then install the AWS CLI.
 

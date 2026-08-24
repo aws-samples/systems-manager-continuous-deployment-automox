@@ -19,15 +19,15 @@ parameters:
   AutomoxKey:
     type: "String"
     description: "Automox Key"
-    default: "{{resolve:secretsmanager:automoxAPI:SecretString:automoxKey}}"
+    default: "{{resolve:secretsmanager:automox/apiKey}}"
   AMPath:
     type: "String"
     description: "AM Path"
-    default: "C:\\Temp"
+    default: "$env:TEMP"
   AMOutFile:
     type: "String"
     description: "AM Outfile"
-    default: "C:\\Temp\\Automox_Installer-latest.msi"
+    default: "$env:TEMP\\Automox_Installer-latest.msi"
 mainSteps:
 - action: "aws:runShellScript"
   name: "InstallAutomoxLinux"
